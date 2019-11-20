@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Oppsyn": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\temp\\oppsyn\\data\\config\\config.json"
+    }
+  }
+}
