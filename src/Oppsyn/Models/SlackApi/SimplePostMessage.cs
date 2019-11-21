@@ -3,9 +3,9 @@ using SlackConnector.Models;
 
 namespace Oppsyn
 {
-    public  class ChatMessage 
+    public class SimplePostMessage 
     {
-        public SlackChatHub Chathub { get; set; }
+        public string Channel { get; internal set; }
         public string Text { get; set; }
 
         /// <summary>

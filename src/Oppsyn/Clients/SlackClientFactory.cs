@@ -13,7 +13,7 @@ namespace Oppsyn.SlackClients
 
         }
 
-        public ISlackFileClient CreateileClient()
+        public ISlackFileClient CreateFileClient()
         {
             return _serviceProvider.GetRequiredService<ISlackFileClient>();
         }
@@ -27,7 +27,7 @@ namespace Oppsyn.SlackClients
     public interface ISlackClientFactory
     {
         public ISlackMessageClient CreateMessageClient();
-        public ISlackFileClient CreateileClient();
+        public ISlackFileClient CreateFileClient();
 
     }
 
