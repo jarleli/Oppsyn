@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Oppsyn.SlackClients
 {
@@ -15,12 +13,12 @@ namespace Oppsyn.SlackClients
 
         }
 
-        public ISlackFileClient GetFileClient()
+        public ISlackFileClient CreateileClient()
         {
             return _serviceProvider.GetRequiredService<ISlackFileClient>();
         }
 
-        public ISlackMessageClient GetMessageClient()
+        public ISlackMessageClient CreateMessageClient()
         {
             return _serviceProvider.GetRequiredService<ISlackMessageClient>();        
         }
@@ -28,8 +26,8 @@ namespace Oppsyn.SlackClients
 
     public interface ISlackClientFactory
     {
-        public ISlackMessageClient GetMessageClient();
-        public ISlackFileClient GetFileClient();
+        public ISlackMessageClient CreateMessageClient();
+        public ISlackFileClient CreateileClient();
 
     }
 

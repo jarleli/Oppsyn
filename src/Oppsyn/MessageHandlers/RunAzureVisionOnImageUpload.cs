@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
 using Newtonsoft.Json.Linq;
+using Oppsyn.Clients;
 using Oppsyn.SlackClients;
 using Serilog;
 using SlackConnector.Models;
@@ -14,7 +15,7 @@ namespace Oppsyn
     public class RunAzureVisionOnImageUpload : IMessageHandler
     {
         private readonly ISlackClientFactory _slackClientFactory;
-        private readonly IComputerVisionClient _visionClient;
+        private readonly IVisionClientFactory _visionClientFactory;
         private readonly ILogger _logger;
         private readonly List<VisualFeatureTypes> _visionVisualFeatures = new List<VisualFeatureTypes>()
             {
@@ -26,10 +27,10 @@ namespace Oppsyn
             };
 
 
-        public RunAzureVisionOnImageUpload(ILogger logger, ISlackClientFactory slackClientFactory, IComputerVisionClient visionClient)
+        public RunAzureVisionOnImageUpload(ILogger logger, ISlackClientFactory slackClientFactory, IVisionClientFactory visionClientFactory)
         {
             _slackClientFactory = slackClientFactory ?? throw new ArgumentNullException(nameof(slackClientFactory));
-            _visionClient = visionClient ?? throw new ArgumentNullException(nameof(visionClient));
+            _visionClientFactory = visionClientFactory ?? throw new ArgumentNullException(nameof(visionClientFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -57,31 +58,17 @@ namespace Oppsyn
             return false;
         }
 
-        private async Task PostImageAnalysis(SlackMessage message, SlackFile file, string analysis)
-        {
-            var jo = JObject.Parse(message.RawData);
-            var tts = jo["thread_ts"]?.ToString();
-            var ts = jo["ts"].ToString();
-            
-            var client = _slackClientFactory.GetMessageClient();
-            await client.PostMessage(new ChatMessage() { 
-                Chathub = message.ChatHub, 
-                Text = $"Image '{file.Title ?? "__"}' contains: {analysis}", 
-                ThreadTs = tts ?? ts
-            });
-        }
+     
 
         private async Task<string> AnalyzeFileAsImage(SlackFile file)
         {
-            var client = _slackClientFactory.GetFileClient();
-            var response = await client.DownloadFile(file.UrlPrivateDownload);
-            var fileStream =await response.Content.ReadAsStreamAsync();
+            var fileStream = await GetFileStream(file);
 
-
-            var results = await _visionClient.AnalyzeImageInStreamAsync(fileStream, _visionVisualFeatures);
+            var visionClient = _visionClientFactory.CreateVisionClient();
+            var results = await visionClient.AnalyzeImageInStreamAsync(fileStream, _visionVisualFeatures);
 
             var details = new List<string>();
-            if(results.Adult.IsAdultContent)
+            if (results.Adult.IsAdultContent)
             { details.Add("Adult Content"); }
             var cap = results.Description.Captions.Where(d => d.Confidence > 0.8).Select(d => d.Text);
             details.AddRange(cap);
@@ -102,6 +89,29 @@ namespace Oppsyn
             var str = string.Join(", ", details.Select(d => $"`{d}`"));
 
             return str;
+        }
+
+        private async Task<System.IO.Stream> GetFileStream(SlackFile file)
+        {
+            var client = _slackClientFactory.CreateileClient();
+            var response = await client.DownloadFile(file.UrlPrivateDownload);
+            var fileStream = await response.Content.ReadAsStreamAsync();
+            return fileStream;
+        }
+
+        private async Task PostImageAnalysis(SlackMessage message, SlackFile file, string analysis)
+        {
+            var jo = JObject.Parse(message.RawData);
+            var tts = jo["thread_ts"]?.ToString();
+            var ts = jo["ts"].ToString();
+
+            var client = _slackClientFactory.CreateMessageClient();
+            await client.PostMessage(new ChatMessage()
+            {
+                Chathub = message.ChatHub,
+                Text = $"Image '{file.Title ?? "__"}' contains: {analysis}",
+                ThreadTs = tts ?? ts
+            });
         }
     }
 }

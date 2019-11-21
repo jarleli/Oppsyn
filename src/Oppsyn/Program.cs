@@ -15,6 +15,7 @@ using System.Net.Http.Headers;
 using System.Linq;
 using System.IO;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
+using Oppsyn.Infrastructure.Installation;
 
 namespace Oppsyn
 {
@@ -56,24 +57,11 @@ namespace Oppsyn
                     var config = context.Configuration.GetSection("BotConfig").Get<BotConfig>();
                     services.AddSingleton(config);
 
-                    services.AddSingleton<SlackConnectionProvider>();
-                    services.AddSingleton<ISlackConnectionProvider>((s) => s.GetRequiredService<SlackConnectionProvider>());
-
-                    services.AddHttpClient<ISlackMessageClient, SlackMessageClient>(c=> 
-                            c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.SlackApiKey));
-                    services.AddHttpClient<ISlackFileClient, SlackFileClient>(c =>
-                            c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.SlackApiKey));
-                    services.AddSingleton<ISlackClientFactory, SlackClientFactory>();
-
-                    services.AddSingleton<ApiKeyServiceClientCredentials>(new ApiKeyServiceClientCredentials(config.AzureServiceToken));
-                    services.AddHttpClient<IComputerVisionClient, ComputerVisionClient>();
-                    services.AddTransient<IComputerVisionClient, ComputerVisionClient>(s => new ComputerVisionClient(s.GetRequiredService<ApiKeyServiceClientCredentials>()) { Endpoint = config.AzureServiceEndpoint });
-
-                    services.AddSingleton<IMessageHandler, RunAzureVisionOnImageUpload>();
-                    services.AddSingleton<MessageDispatcher>();
+                    services.InstallSlackClients(config);
+                    services.AddVisionClient(config);
+                    services.AddMessageHandlers();
 
                     services.AddHostedService<SlackConnectionHost>();
-                    //services.AddHostedService<SlackCore>();
                 })
                 .Build();
 
