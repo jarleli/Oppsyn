@@ -101,7 +101,7 @@ namespace Oppsyn
                     if (file.Mimetype.StartsWith("image/"))
                     {
                         var analysis = await AnalyzeFileAsImage(file.UrlPrivateDownload);
-                        if (_config.PostFindings)
+                        if (_config.Slack.PostFindings)
                         {
                             var replyTs = jobject["thread_ts"]?.ToString() ?? jobject["ts"].ToString();
                             await PostImageAnalysis(message.ChatHub.Id, file.Title, analysis, replyTs);

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Oppsyn.ExtensionsClasses;
+using Oppsyn.Models;
 using Oppsyn.SlackClients;
 using Serilog;
 using SlackConnector;
@@ -50,7 +51,7 @@ namespace Oppsyn
             try
             {
                 var slackConnector = new SlackConnector.SlackConnector();
-                _slackConnection = await slackConnector.Connect(_config.SlackApiKey);
+                _slackConnection = await slackConnector.Connect(_config.Slack.BotUserToken);
 
                 _slackConnection.OnMessageReceived += MessageReceived;
                 _slackConnection.OnDisconnect += OnDisconnect;

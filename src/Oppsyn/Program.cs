@@ -16,6 +16,7 @@ using System.Linq;
 using System.IO;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
 using Oppsyn.Infrastructure.Installation;
+using Oppsyn.Models;
 
 namespace Oppsyn
 {
@@ -57,8 +58,8 @@ namespace Oppsyn
                     var config = context.Configuration.GetSection("BotConfig").Get<BotConfig>();
                     services.AddSingleton(config);
 
-                    services.InstallSlackClients(config);
-                    services.AddVisionClient(config);
+                    services.InstallSlackClients(config.Slack);
+                    services.AddVisionClient(config.Azure);
                     services.AddMessageHandlers();
 
                     services.AddHostedService<SlackConnectionHost>();

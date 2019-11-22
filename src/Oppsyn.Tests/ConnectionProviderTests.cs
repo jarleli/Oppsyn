@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace Oppsyn.Tests
 {
-    [TestFixture,Category("Unit"))]
+    [TestFixture,Category("Unit")]
     public class ConnectionProviderTests
     {
         [Test]
