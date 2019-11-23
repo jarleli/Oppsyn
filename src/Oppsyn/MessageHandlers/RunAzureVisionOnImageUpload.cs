@@ -68,22 +68,37 @@ namespace Oppsyn
         private async Task AnalyzeImagesInPostedLink(SlackMessage incomingMessage, JObject jobject)
         {
             var message = JsonConvert.DeserializeObject<IncomingMessage>(incomingMessage.RawData);
-            if (message.Blocks.BlockHasTypeLinkOrHasChildWithTypeLink()) {
+            if (message.Blocks.BlockHasTypeLinkOrHasChildWithTypeLink())
+            {
                 var client = _slackClientFactory.CreateMessageClient();
-                var fullMessage = await client.GetSpecificMessage(message.Channel, message.Ts);
-
-                _logger.Debug("Found link in text block and retrieved full message to examine attachments in {MessageTs}.",fullMessage.Ts);
+                var fullMessage = await GetFullMessageWithAttachment(message, client);
+                _logger.Debug("Found link in text block and retrieved full message to examine attachments in {MessageTs}. Message had {AttachmentCount} attachments.", fullMessage.Ts, fullMessage.Attachments.Count());
                 foreach (var attachment in fullMessage.Attachments)
                 {
                     var imageUri = attachment.ImageUrl ?? attachment.ThumbUrl;
-                    if(imageUri != null)
+                    if (imageUri != null)
                     {
                         var analysis = await AnalyzeFileAsImage(imageUri);
-                        var replyTs = fullMessage.ThreadTs ?? fullMessage.Ts ;
+                        var replyTs = fullMessage.ThreadTs ?? fullMessage.Ts;
                         await PostImageAnalysis(incomingMessage.ChatHub.Id, attachment.Title, analysis, replyTs);
                     }
                 }
             }
+        }
+
+        private async Task<FullIncomingMessage> GetFullMessageWithAttachment(IncomingMessage message, ISlackMessageClient client)
+        {
+            var retryCount = 0;
+            var fullMessage = await client.GetSpecificMessage(message.Channel, message.Ts);
+            while (!fullMessage.Attachments.Any() && retryCount < 5)
+            {
+                _logger.Verbose("Expected attacment not in message. Will try again.");
+                await Task.Delay(100);
+                retryCount++;
+                fullMessage = await client.GetSpecificMessage(message.Channel, message.Ts);
+            }
+
+            return fullMessage;
         }
 
         /// <summary>
